@@ -3,6 +3,8 @@
 
 Uses SDL to render sorting algorithms step-by-step.
 
+![Selection Sort](screenshots/selection_sort.png "Selection Sort")
+
 The following algorithms are implemented:
 
 * [Bubble sort](https://en.wikipedia.org/wiki/Bubble_sort)
