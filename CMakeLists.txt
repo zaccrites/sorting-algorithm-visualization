@@ -8,6 +8,10 @@ find_package(SDL2 REQUIRED)
 
 add_executable(main
     main.c
+    shuffle.c
+    selection_sort.c
+    insertion_sort.c
+    bubble_sort.c
 )
 
 target_compile_options(main PRIVATE

@@ -1,49 +1,16 @@
 
-// #include <stdio.h>
-// #include <stddef.h>
-
-
-
-
-// static void merge_sort_range(int* values, ssize_t start, ssize_t end)
-// {
-//     printf("start = %d, end = %d \n", start, end);
-//     if (end - start < 2)
-//     {
-
-//     }
-//     else
-//     {
-//         ssize_t middle = (start + end) / 2;
-//         merge_sort_range(values, start, middle);
-//         merge_sort_range(values, middle, end);
-//     }
-// }
-
-
-// void merge_sort(int* values, ssize_t length)
-// {
-//     merge_sort_range(values, 0, length);
-// }
-
-
-// int main()
-// {
-//     int values[] = {3, 40, -1, 5, 10, 100, 201, 0, 3};
-//     ssize_t numValues = sizeof(values) / sizeof(values[0]);
-//     merge_sort(values, numValues);
-
-//     return 0;
-// }
-
-
 #include <stdint.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include <time.h>
 #include <stdlib.h>
 
-#include <stdio.h>
 #include <SDL2/SDL.h>
+
+#include "shuffle.h"
+#include "selection_sort.h"
+#include "insertion_sort.h"
+#include "bubble_sort.h"
 
 
 #define WINDOW_WIDTH  800
@@ -68,170 +35,17 @@ void sort_int_array(int* values, ssize_t length)
 
 
 
-typedef struct
-{
-    int* values;
-    ssize_t num_values;
-    ssize_t num_values_placed;
-    ssize_t current_index;
-    ssize_t current_compared_index;
-    bool any_swaps_this_pass;
-} BubbleSorter;
-
-void init_bubble_sorter(BubbleSorter* sorter, int* values, ssize_t num_values)
-{
-    sorter->values = values;
-    sorter->num_values = num_values;
-    sorter->num_values_placed = 0;
-    sorter->current_index = 0;
-    sorter->current_compared_index = 0;
-    sorter->any_swaps_this_pass = false;
-}
-
-bool bubble_sort_step(BubbleSorter* sorter)
-{
-    sorter->current_compared_index = sorter->current_index + 1;
-
-    int a = sorter->values[sorter->current_index];
-    int b = sorter->values[sorter->current_compared_index];
-    bool do_swap = b < a;
-    if (do_swap)
-    {
-        sorter->values[sorter->current_index] = b;
-        sorter->values[sorter->current_compared_index] = a;
-        sorter->any_swaps_this_pass = true;
-    }
-
-    sorter->current_index = sorter->current_compared_index;
-    if (sorter->current_index >= sorter->num_values - sorter->num_values_placed - 1)
-    {
-        // A swap at the end means that we don't have to check that
-        // value again.
-        if (do_swap)
-        {
-            sorter->num_values_placed += 1;
-            // printf("%d values placed \n", sorter->num_values_placed);
-        }
-
-        // If we're at the end and there were no swaps then we know
-        // the sort is finished.
-        if ( ! sorter->any_swaps_this_pass)
-        {
-            return true;
-        }
-
-        sorter->current_index = 0;
-        sorter->any_swaps_this_pass = false;
-    }
-
-    return false;
-}
 
 
 
-typedef struct
-{
-    int* values;
-    ssize_t num_values;
-    ssize_t current_index;
-    ssize_t current_compared_index;
-    int current_value;
-} InsertionSorter;
-
-void init_insertion_sorter(InsertionSorter* sorter, int* values, ssize_t num_values)
-{
-    sorter->values = values;
-    sorter->num_values = num_values;
-    sorter->current_index = 1;
-    sorter->current_compared_index = 0;
-    sorter->current_value = sorter->values[sorter->current_index];
-}
-
-bool insertion_sort_step(InsertionSorter* sorter)
-{
-    int compared_value = sorter->values[sorter->current_compared_index];
-    if (compared_value <= sorter->current_value || sorter->current_compared_index < 0)
-    {
-        sorter->values[sorter->current_compared_index + 1] = sorter->current_value;
-
-        // Move on to the next element.
-        sorter->current_index += 1;
-        sorter->current_compared_index = sorter->current_index - 1;
-        sorter->current_value = sorter->values[sorter->current_index];
-
-        if (sorter->current_index == sorter->num_values)
-        {
-            return true;
-        }
-    }
-    else
-    {
-        // Shift sorted elements over to make room for the current value
-        // we're inserting.
-        sorter->values[sorter->current_compared_index + 1] = compared_value;
-        sorter->current_compared_index -= 1;
-    }
-    return false;
-}
-
-
-typedef struct
-{
-    int* values;
-    ssize_t num_values;
-    ssize_t current_index;
-    ssize_t current_compared_index;
-    ssize_t current_min_index;
-} SelectionSorter;
-
-void init_selection_sorter(SelectionSorter* sorter, int* values, ssize_t num_values)
-{
-    sorter->values = values;
-    sorter->num_values = num_values;
-    sorter->current_index = 0;
-    sorter->current_compared_index = 0;
-    sorter->current_min_index = 0;
-}
-
-bool selection_sort_step(SelectionSorter* sorter)
-{
-    int current_min = sorter->values[sorter->current_min_index];
-    int current_value = sorter->values[sorter->current_index];
-
-    if (sorter->current_compared_index >= sorter->num_values)
-    {
-        sorter->values[sorter->current_index] = current_min;
-        sorter->values[sorter->current_min_index] = current_value;
-        sorter->current_index += 1;
-        sorter->current_compared_index = sorter->current_index;
-        sorter->current_min_index = sorter->current_index;
-    }
-    else
-    {
-        int current_compared_value = sorter->values[sorter->current_compared_index];
-        if (current_compared_value < current_min)
-        {
-            sorter->current_min_index = sorter->current_compared_index;
-        }
-        sorter->current_compared_index += 1;
-    }
-
-    return sorter->current_index == sorter->num_values - 1;
-}
 
 
 
-// Fisher-Yates shuffle
-void shuffle(int* values, ssize_t num_values)
-{
-    for (ssize_t i = num_values - 1; i != 0; i--)
-    {
-        ssize_t j = rand() % i;
-        int tmp = values[j];
-        values[j] = values[i];
-        values[i] = tmp;
-    }
-}
+
+
+
+
+
 
 
 
