@@ -20,5 +20,8 @@ array at each step before it is completely sorted.
 
 ## Development
 
-    $ apt install libsdl2-dev
-    $ make && /tmp/main
+    $ apt install cmake libsdl2-dev
+    $ git clone https://github.com/zaccrites/sorting-algorithm-visualization
+    $ cmake -B ~/sorting-build -S sorting-algorithm-visualization
+    $ make -C ~/sorting-build
+    $ ~/sorting-build/main
