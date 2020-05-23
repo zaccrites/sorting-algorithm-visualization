@@ -5,7 +5,7 @@
 
 
 
-// static void merge_sort_range(int* values, size_t start, size_t end)
+// static void merge_sort_range(int* values, ssize_t start, ssize_t end)
 // {
 //     printf("start = %d, end = %d \n", start, end);
 //     if (end - start < 2)
@@ -14,14 +14,14 @@
 //     }
 //     else
 //     {
-//         size_t middle = (start + end) / 2;
+//         ssize_t middle = (start + end) / 2;
 //         merge_sort_range(values, start, middle);
 //         merge_sort_range(values, middle, end);
 //     }
 // }
 
 
-// void merge_sort(int* values, size_t length)
+// void merge_sort(int* values, ssize_t length)
 // {
 //     merge_sort_range(values, 0, length);
 // }
@@ -30,7 +30,7 @@
 // int main()
 // {
 //     int values[] = {3, 40, -1, 5, 10, 100, 201, 0, 3};
-//     size_t numValues = sizeof(values) / sizeof(values[0]);
+//     ssize_t numValues = sizeof(values) / sizeof(values[0]);
 //     merge_sort(values, numValues);
 
 //     return 0;
@@ -60,7 +60,7 @@ static int compare_ints(const void* a, const void* b)
     else return 0;
 }
 
-void sort_int_array(int* values, size_t length)
+void sort_int_array(int* values, ssize_t length)
 {
     qsort(values, length, sizeof(*values), compare_ints);
 }
@@ -71,35 +71,38 @@ void sort_int_array(int* values, size_t length)
 typedef struct
 {
     int* values;
-    size_t num_values;
-    size_t num_values_placed;
-    size_t current_index;
+    ssize_t num_values;
+    ssize_t num_values_placed;
+    ssize_t current_index;
+    ssize_t current_compared_index;
     bool any_swaps_this_pass;
 } BubbleSorter;
 
-void init_bubble_sorter(BubbleSorter* sorter, int* values, size_t num_values)
+void init_bubble_sorter(BubbleSorter* sorter, int* values, ssize_t num_values)
 {
     sorter->values = values;
     sorter->num_values = num_values;
     sorter->num_values_placed = 0;
     sorter->current_index = 0;
+    sorter->current_compared_index = 0;
     sorter->any_swaps_this_pass = false;
 }
 
 bool bubble_sort_step(BubbleSorter* sorter)
 {
-    size_t next_index = sorter->current_index + 1;
+    sorter->current_compared_index = sorter->current_index + 1;
+
     int a = sorter->values[sorter->current_index];
-    int b = sorter->values[next_index];
+    int b = sorter->values[sorter->current_compared_index];
     bool do_swap = b < a;
     if (do_swap)
     {
         sorter->values[sorter->current_index] = b;
-        sorter->values[next_index] = a;
+        sorter->values[sorter->current_compared_index] = a;
         sorter->any_swaps_this_pass = true;
     }
 
-    sorter->current_index = next_index;
+    sorter->current_index = sorter->current_compared_index;
     if (sorter->current_index >= sorter->num_values - sorter->num_values_placed - 1)
     {
         // A swap at the end means that we don't have to check that
@@ -126,20 +129,59 @@ bool bubble_sort_step(BubbleSorter* sorter)
 
 
 
-// Fisher-Yates shuffle
-void shuffle(int* values, size_t num_values)
+typedef struct
 {
-    // for (size_t i = 0; i < num_values - 2; i++)
-    // {
-    //     size_t j = i + (rand() % (num_values - i));
-    //     int tmp = values[j];
-    //     values[j] = values[i];
-    //     values[i] = tmp;
-    // }
+    int* values;
+    ssize_t num_values;
+    ssize_t current_index;
+    ssize_t current_compared_index;
+    int current_value;
+} InsertionSorter;
 
-    for (size_t i = num_values - 1; i != 0; i--)
+void init_insertion_sorter(InsertionSorter* sorter, int* values, ssize_t num_values)
+{
+    sorter->values = values;
+    sorter->num_values = num_values;
+    sorter->current_index = 1;
+    sorter->current_compared_index = 0;
+    sorter->current_value = sorter->values[sorter->current_index];
+}
+
+bool insertion_sort_step(InsertionSorter* sorter)
+{
+    int compared_value = sorter->values[sorter->current_compared_index];
+    if (compared_value <= sorter->current_value || sorter->current_compared_index < 0)
     {
-        size_t j = rand() % i;
+        sorter->values[sorter->current_compared_index + 1] = sorter->current_value;
+
+        // Move on to the next element.
+        sorter->current_index += 1;
+        sorter->current_compared_index = sorter->current_index - 1;
+        sorter->current_value = sorter->values[sorter->current_index];
+
+        if (sorter->current_index == sorter->num_values)
+        {
+            return true;
+        }
+    }
+    else
+    {
+        // Shift sorted elements over to make room for the current value
+        // we're inserting.
+        sorter->values[sorter->current_compared_index + 1] = compared_value;
+        sorter->current_compared_index -= 1;
+    }
+    return false;
+}
+
+
+
+// Fisher-Yates shuffle
+void shuffle(int* values, ssize_t num_values)
+{
+    for (ssize_t i = num_values - 1; i != 0; i--)
+    {
+        ssize_t j = rand() % i;
         int tmp = values[j];
         values[j] = values[i];
         values[i] = tmp;
@@ -176,7 +218,7 @@ int main()
 
     #define NUM_VALUES  512
     int values[NUM_VALUES];
-    for (size_t i = 0; i < NUM_VALUES; i++)
+    for (ssize_t i = 0; i < NUM_VALUES; i++)
     {
         // values[i] = 1 + rand() % 499;
         values[i] = i;
@@ -186,12 +228,12 @@ int main()
     // To verify sorting algorithms work
     // sort_int_array(values, NUM_VALUES);
 
-    BubbleSorter sorter;
-    init_bubble_sorter(&sorter, values, NUM_VALUES);
+    // BubbleSorter sorter;
+    // init_bubble_sorter(&sorter, values, NUM_VALUES);
     // while ( ! bubble_sort_step(&sorter));
 
-
-
+    InsertionSorter sorter;
+    init_insertion_sorter(&sorter, values, NUM_VALUES);
 
     // TODO
     bool arraySorted = false;
@@ -222,7 +264,7 @@ int main()
         SDL_SetRenderDrawColor(pRenderer, 0x64, 0x95, 0xed, 0xff);
         SDL_RenderClear(pRenderer);
 
-        for (size_t i = 0; i < NUM_VALUES; i++)
+        for (ssize_t i = 0; i < NUM_VALUES; i++)
         {
             if (arraySorted)
             {
@@ -231,6 +273,10 @@ int main()
             else if (i == sorter.current_index)
             {
                 SDL_SetRenderDrawColor(pRenderer, 0xff, 0x00, 0x00, 0xff);
+            }
+            else if (i == sorter.current_compared_index)
+            {
+                SDL_SetRenderDrawColor(pRenderer, 0x00, 0xff, 0x00, 0xff);
             }
             else
             {
@@ -257,7 +303,8 @@ int main()
 
         if ( ! arraySorted)
         {
-            arraySorted = bubble_sort_step(&sorter);
+            // arraySorted = bubble_sort_step(&sorter);
+            arraySorted = insertion_sort_step(&sorter);
         }
 
     }
